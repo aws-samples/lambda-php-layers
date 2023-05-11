@@ -1,0 +1,275 @@
+#!/usr/bin/env bash
+
+set -e
+
+usage() {
+  echo "usage: $0 COMMAND"
+  echo
+  echo "Manage runtime tarball lifecycle."
+  echo
+  echo "Commands:"
+  echo "   copy_libs"
+  echo "   clean_libs"
+  echo "   zip_layer"
+  echo "   php_enable_extensions"
+  echo "   php_copy_libs"
+  echo "   php_release"
+  echo
+}
+
+php_copy_libs() {
+  # shellcheck disable=SC2045
+  for file in $(ls /opt/php/extensions/*.*); do
+    copy_libs "$file"
+  done
+
+  copy_libs /opt/php/bin/php
+  copy_libs /opt/php/bin/php-fpm
+}
+
+copy_libs() {
+  mkdir -p /opt/lib
+  chmod +x "$1"
+  for lib in $(ldd "$1"); do
+    if [ -f "$lib" ]; then
+      echo "$1: cp $lib"
+      cp "$lib" /opt/lib
+    fi
+  done
+}
+
+clean_libs() {
+  dirs=$(echo "$LD_LIBRARY_PATH" | tr ":" "\n")
+  opt_lib=/opt/lib
+  # shellcheck disable=SC2124
+  dirs=${dirs[@]/$opt_lib/}
+  for dir in $dirs; do
+    echo "$dir"
+    # shellcheck disable=SC2045
+    for lib in $(ls /opt/lib); do
+      if [ -f "$dir/$lib" ]; then
+        echo "rm /opt/lib/$lib because already exists in $dir/$lib"
+        rm -rf "/opt/lib/$lib"
+      fi
+    done
+  done
+}
+
+php_zip_layer() {
+  echo "zip starting..."
+  mv /opt/php/bin/php /tmp/php
+  cd /opt
+  zip --quiet --recurse-paths /layer.zip .
+  mv /tmp/php /opt/php/bin/php
+  echo "Lambda Layer file is $(du -sh /layer.zip)"
+}
+
+nginx_zip_layer() {
+  echo "zip starting..."
+  cd /opt
+  zip --quiet --recurse-paths /layer.zip .
+  echo "Lambda Layer file is $(du -sh /layer.zip)"
+}
+
+php_enable_extensions() {
+
+  echo 'Enable Extensions'
+  mkdir -p /opt/php/php.d/
+
+  extension_arr=()
+  extension_zend=()
+  extension_arr_last=()
+
+  # shellcheck disable=SC2045
+  for so in $(ls /opt/php/extensions/*.so); do
+    if readelf --wide --syms $so | grep -q ' zend_extension_entry$'; then
+      extension_zend+=("zend_extension=$so")
+    else
+      if [ "$so" == "/opt/php/extensions/mysqli.so" ]; then
+        extension_arr_last+=("extension=$so")
+      else
+        extension_arr+=("extension=$so")
+      fi
+    fi
+  done
+
+  echo "extension_dir=/opt/php/extensions" >/opt/php/php.d/extensions.ini
+  # shellcheck disable=SC2129
+  echo "${extension_arr[*]}" | tr ' ' '\n' | sort -n >>/opt/php/php.d/extensions.ini
+  echo "${extension_arr_last[*]}" | tr ' ' '\n' | sort -n >>/opt/php/php.d/extensions.ini
+  echo "${extension_zend[*]}" | tr ' ' '\n' | sort -n >>/opt/php/php.d/extensions.ini
+
+  cat /opt/php/php.d/extensions.ini
+}
+
+php_disable() {
+  mkdir -p /tmp/extensions
+
+  for extension in "${@:2}"; do
+    rm -rf /opt/php/extensions/"$extension"*
+  done
+}
+
+php_install() {
+  for extension in "${@:2}"; do
+    pecl install "$extension"
+  done
+}
+
+change_ext_dir() {
+  echo 'Change Extensions Dir'
+
+  extension_dir=$(php-config --extension-dir)
+  mv "$extension_dir" /opt/php/extensions
+  ln -s /opt/php/extensions "$extension_dir"
+}
+
+rmFile() {
+  find "$1" -iname "$2" -type f -delete
+}
+
+rmDir() {
+  find "$1" -iname "$2" -type d -exec rm -r {} +
+}
+
+php_strip_package() {
+  # shellcheck disable=SC2039
+  for dir in "${@:2}"; do
+    echo "Clear $dir"
+    rmFile "$dir" "tmp-*"
+    rmFile "$dir" ".gitignore"
+    rmFile "$dir" ".gitattributes"
+    rmFile "$dir" ".phpcsignore"
+    rmFile "$dir" ".travis.yml"
+    rmFile "$dir" ".editorconfig"
+    rmFile "$dir" ".pullapprove.yml"
+    rmFile "$dir" "*.md"
+    rmFile "$dir" "*.txt"
+    rmFile "$dir" "NOTICE"
+    rmFile "$dir" "README"
+    rmFile "$dir" "README.*"
+    rmFile "$dir" "LICENSE"
+    rmFile "$dir" "Makefile"
+    rmFile "$dir" "psalm.xml"
+    rmFile "$dir" "tests.yml"
+    rmFile "$dir" "phpunit.xml"
+    rmFile "$dir" "codecov.yml"
+    rmFile "$dir" "CHANGELOG.*"
+    rmFile "$dir" "composer.json"
+    rmFile "$dir" "composer.lock"
+    rmFile "$dir" "THIRD-PARTY-LICENSES"
+    rmDir "$dir" ".github"
+    rmDir "$dir" "tests"
+  done
+}
+
+php_aws_sdk_only() {
+  if [ ! -d "vendor/aws" ]; then
+    echo "Command must run in app dir"
+  fi
+
+  echo "php_aws_sdk_only ..."
+
+  rm -rf /tmp/aws-sdk
+  mkdir -p /tmp/aws-sdk/data
+
+  mv vendor/aws/aws-sdk-php/src/*.php      /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/data/*.php /tmp/aws-sdk/data/
+
+  mv vendor/aws/aws-sdk-php/src/Arn                  /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Api                  /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Token                /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Retry                /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Handler              /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Signature            /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/DefaultsMode         /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Endpoint             /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Exception            /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/EndpointV2           /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/Credentials          /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/EndpointDiscovery    /tmp/aws-sdk/
+  mv vendor/aws/aws-sdk-php/src/ClientSideMonitoring /tmp/aws-sdk/
+
+  # shellcheck disable=SC2039
+  for service in "${@:2}"; do
+    mv "vendor/aws/aws-sdk-php/src/$service"      /tmp/aws-sdk/
+    service=$(echo "$service" | tr '[:upper:]' '[:lower:]')
+    mv "vendor/aws/aws-sdk-php/src/data/$service" /tmp/aws-sdk/data/
+  done
+
+  rm -rf vendor/aws/aws-sdk-php/src
+  mv /tmp/aws-sdk vendor/aws/aws-sdk-php/src
+}
+
+case "$1" in
+
+php_enable_extensions)
+  php_enable_extensions
+  ;;
+
+php_disable)
+  php_disable "$@"
+  ;;
+
+php_install)
+  php_install "$@"
+  ;;
+
+php_aws_sdk_only)
+  php_aws_sdk_only "$@"
+  ;;
+
+php_strip_package)
+  php_strip_package "$@"
+  ;;
+
+change_ext_dir)
+  change_ext_dir
+  ;;
+
+php_copy_libs)
+  php_copy_libs
+  ;;
+
+copy_libs)
+  copy_libs "$2"
+  ;;
+
+clean_libs)
+  clean_libs
+  ;;
+
+php_zip_layer)
+  php_zip_layer
+  ;;
+
+nginx_zip_layer)
+  nginx_zip_layer
+  ;;
+
+php_release)
+  php_enable_extensions
+  php_copy_libs
+  rm -rf /opt/php/bin/pear
+  rm -rf /opt/php/bin/peardev
+  rm -rf /opt/php/bin/pecl
+  rm -rf /opt/php/bin/phar
+  rm -rf /opt/php/bin/phar.phar
+  rm -rf /opt/php/bin/php-cgi
+  rm -rf /opt/php/bin/php-config
+  rm -rf /opt/php/bin/phpdbg
+  rm -rf /opt/php/bin/phpize
+  rm -rf /opt/php/include
+  rm -rf /opt/php/lib
+  rm -rf /opt/php/php
+  rm -rf /opt/php/etc/pear.conf
+  rm -rf /opt/php/etc/php-fpm.conf.default
+  rm -rf /opt/php/etc/php-fpm.d
+  rm -rf /opt/nginx/html
+  ;;
+
+*)
+  usage
+  ;;
+
+esac

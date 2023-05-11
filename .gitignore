@@ -1,0 +1,13 @@
+/target
+/examples/.idea/
+samconfig.toml
+.idea
+.aws-sam
+.DS_Store
+.env
+
+/src/php-74-fpm-nginx/app/vendor/
+/src/php-80-fpm-nginx/app/vendor/
+/src/php-82-fpm-nginx/app/vendor/
+/src/php-81-fpm-nginx/app/vendor/
+/src/php-beta-fpm-nginx/app/vendor/
