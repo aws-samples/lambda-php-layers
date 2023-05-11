@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Fail on error
+set -e
+
+if [ -f "/var/task/bootstrap" ]; then
+  echo "Found and Running '/var/task/bootstrap' instead of '/opt/bootstrap'"
+  exec -- /var/task/bootstrap
+else
+  echo "Running '/opt/bootstrap' when '/var/task/bootstrap' not found"
+
+  if [ -f "/var/task/nginx/conf/nginx.conf" ]; then
+    exec /opt/nginx/bin/nginx -c /var/task/nginx/conf/nginx.conf -g "daemon off;"
+  else
+    exec /opt/nginx/bin/nginx -c /opt/nginx/conf/nginx.conf -g "daemon off;"
+  fi
+
+fi

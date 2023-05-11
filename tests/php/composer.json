@@ -1,0 +1,9 @@
+{
+  "require": {
+  },
+  "config": {
+    "platform": {
+      "php": "7.4"
+    }
+  }
+}

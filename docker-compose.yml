@@ -1,0 +1,192 @@
+version: '3.8'
+
+services:
+
+  devel:
+    container_name: devel
+    image: public.ecr.aws/awsguru/devel
+
+  devel-nginx:
+    container_name: devel-nginx
+    image: public.ecr.aws/awsguru/nginx:devel.1.23.2023.3.13.1
+    environment:
+      PORT: 8080
+      AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src/nginx-123/app:/var/task/app
+      - ./src/nginx-123/runtime/bootstrap:/opt/bootstrap
+      - ./src/nginx-123/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+
+  devel-php-74-fpm-nginx:
+    container_name: devel-php-74-fpm-nginx
+    image: public.ecr.aws/awsguru/php:devel.74.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./src/php-74-fpm-nginx/app:/var/task/app
+      - ./src/php-74-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-74-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-74-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-74-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+      - ./src/php-74-fpm-nginx/php/php.d:/opt/php/php.d
+
+  devel-php-80-fpm-nginx:
+    container_name: devel-php-80-fpm-nginx
+    image: public.ecr.aws/awsguru/php:devel.80.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./src/php-80-fpm-nginx/app:/var/task/app
+      - ./src/php-80-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-80-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-80-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-80-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+      - ./src/php-80-fpm-nginx/php/php.d:/opt/php/php.d
+
+  devel-php-81-fpm-nginx:
+    container_name: devel-php-81-fpm-nginx
+    image: public.ecr.aws/awsguru/php:devel.81.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8083:8080"
+    volumes:
+      - ./src/php-81-fpm-nginx/app:/var/task/app
+      - ./src/php-81-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-81-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-81-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-81-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+      - ./src/php-81-fpm-nginx/php/php.d:/opt/php/php.d
+
+  devel-php-82-fpm-nginx:
+    container_name: devel-php-82-fpm-nginx
+    image: public.ecr.aws/awsguru/php:devel.82.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./src/php-82-fpm-nginx/app:/var/task/app
+      - ./src/php-82-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-82-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-82-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-82-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+      - ./src/php-82-fpm-nginx/php/php.d:/opt/php/php.d
+
+  devel-php-82-static-fpm-nginx:
+    container_name: devel-php-82-static-fpm-nginx
+    image: public.ecr.aws/awsguru/php:devel.82.static.2023.3.13.1-x86_64
+    environment:
+      PORT: 8080
+    ports:
+      - "8085:8080"
+    volumes:
+      - ./src/php-82-fpm-nginx/app:/var/task/app
+      - ./src/php-82-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-82-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-82-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-82-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+
+  nginx:
+    container_name: nginx
+    image: public.ecr.aws/awsguru/nginx
+    environment:
+      PORT: 8080
+      AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./src/nginx-123/app:/var/task/app
+      - ./src/nginx-123/runtime/bootstrap:/opt/bootstrap
+      - ./src/nginx-123/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+
+  php-74-fpm-nginx:
+    container_name: php-74-fpm-nginx
+    image: public.ecr.aws/awsguru/php:74.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8091:8080"
+    volumes:
+      - ./src/php-74-fpm-nginx/app:/var/task/app
+      - ./src/php-74-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-74-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-74-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-74-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+
+  php-80-fpm-nginx:
+    container_name: php-80-fpm-nginx
+    image: public.ecr.aws/awsguru/php:80.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8092:8080"
+    volumes:
+      - ./src/php-80-fpm-nginx/app:/var/task/app
+      - ./src/php-80-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-80-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-80-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-80-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+
+  php-81-fpm-nginx:
+    container_name: php-81-fpm-nginx
+    image: public.ecr.aws/awsguru/php:81.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8093:8080"
+    volumes:
+      - ./src/php-81-fpm-nginx/app:/var/task/app
+      - ./src/php-81-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-81-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-81-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-81-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+
+  php-82-fpm-nginx:
+    container_name: php-82-fpm-nginx
+    image: public.ecr.aws/awsguru/php:82.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8094:8080"
+    volumes:
+      - ./src/php-82-fpm-nginx/app:/var/task/app
+      - ./src/php-82-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-82-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-82-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-82-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+
+  php-82-static-fpm-nginx:
+    container_name: php-82-static-fpm-nginx
+    image: public.ecr.aws/awsguru/php:82.static.2023.3.13.1
+    environment:
+      PORT: 8080
+    ports:
+      - "8095:8080"
+    volumes:
+      - ./src/php-82-fpm-nginx/app:/var/task/app
+      - ./src/php-82-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-82-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-82-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-82-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
+
+  php-beta-fpm-nginx:
+    container_name: php-beta-fpm-nginx
+    image: public.ecr.aws/awsguru/php-beta:2023.3.13.1-x86_64
+    environment:
+      PORT: 8080
+    entrypoint: /opt/bootstrap
+    ports:
+      - "8096:8080"
+    volumes:
+      - ./src/php-beta-fpm-nginx/app:/var/task/app
+      - ./src/php-beta-fpm-nginx/runtime/bootstrap:/opt/bootstrap
+      - ./src/php-beta-fpm-nginx/nginx/conf/nginx.conf:/opt/nginx/conf/nginx.conf
+      - ./src/php-beta-fpm-nginx/php/php.ini:/opt/php/php.ini
+      - ./src/php-beta-fpm-nginx/php/etc/php-fpm.conf:/opt/php/etc/php-fpm.conf
